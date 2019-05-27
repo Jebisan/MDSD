@@ -1,0 +1,99 @@
+grammar xtext.Pycom with org.eclipse.xtext.common.Terminals
+generate pycom "http://www.Pycom.xtext"
+
+System:
+	libraries+=Library* imports+=Import* boards+=Board* servers+=Server* 
+;
+
+Library:
+	'Library' name=ID '{' (imports+=Import)* '}'
+;
+
+Import: 
+	'import' name=ID '('  parameter+=ParameterType? (',' parameter+=ParameterType)*  ')' 'from' path=STRING
+;
+
+ParameterType:
+	number=INT | text=STRING
+;
+
+Server:
+	'Server' name=ID '('conn=Connection')' '{' exps+=ConditionalAction* '}' 
+;
+
+Connection:
+	host=Host ',' portnumber=INT 
+;
+
+Host:
+	ipAdr= Ipaddress | website=STRING
+;
+
+Ipaddress:
+	INT'.'INT'.'INT'.'INT
+;
+
+Board:
+	'Board' name=ID '('boardType = ID','communicationRate = INT')' ('uses' library+=[Library]? ( ',' library+=[Library])* )? '{' boardMembers+=BoardMember* '}';
+
+BoardMember:
+	boardMember = Sensor | Actuator | Communication;
+
+ConditionalAction:
+	type='if' '(' condition=Condition ')' '{' ExpMembers+=ExpMember* '}';
+
+ExpMember:
+	Function | ConditionalAction;
+
+Sensor:
+	'Sensor' typeName=ModuleType ':' sensorName=ModuleName ('(' pins=Pin')')?
+	;
+	
+Actuator:
+	'Actuator' typeName=ModuleType ':' actuatorName=ModuleName ('(' pins=Pin')')?
+;
+	
+ModuleType:
+	name=ID
+;
+
+ModuleName:
+	name=ID
+;
+	
+Communication:
+	'Communication' ':' type=CommunicationType;
+
+CommunicationType:
+	name = 'WiFi' '(' ssid = STRING ',' password = STRING')' | name= 'Bluetooth' |name= 'SigFox';
+
+Pin:
+	power=PinName ',' input=PinName;
+	
+PinName:
+	name=STRING
+;
+
+Condition:
+	logicEx=LogicExp | logicEx=LogicExp operator='&&' nestedCondition=Condition | logicEx=LogicExp operator='||' nestedCondition=Condition;
+
+LogicExp:
+	boolVal=Boolean | compExp=ComparisonExp;
+
+Boolean:
+	value='true' | value='false';
+
+ComparisonExp: 
+	left=Expression op=Operator right=Expression
+;
+
+Expression:
+	outputValue=INT | outputfunction=Function
+;
+
+Operator:
+	'<' | '<=' | '==' | '>=' | '>' | '!=';
+	
+Function: 
+	board=[Board] '.' functionName=[Import] '('  pins+=Pin? ')'
+;
